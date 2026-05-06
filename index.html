@@ -46,7 +46,6 @@
         }
         .capa-clima.activa { display: block; }
 
-        /* LLUVIA */
         .gota {
             position: absolute; width: 1.5px; height: 45px;
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(120,170,220,0.55));
@@ -58,13 +57,11 @@
             92%  { opacity: 1; }
             100% { transform: translateY(580px) skewX(-8deg); opacity: 0; }
         }
-        /* Overlay azulado tenue para lluvia */
         .overlay-lluvia {
             position: absolute; inset: 0;
             background: rgba(80, 110, 160, 0.08);
         }
 
-        /* SOL — rayos que salen de una esquina */
         .efecto-sol {
             position: absolute; inset: 0;
             background: radial-gradient(ellipse at 92% -5%, 
@@ -90,7 +87,6 @@
             to   { transform: rotate(360deg); }
         }
 
-        /* NUBLADO — manchas difusas que se desplazan */
         .nube {
             position: absolute;
             border-radius: 50%;
@@ -172,7 +168,6 @@
         .moving-arrow.anim-ida { animation: animIda 2s infinite ease-in-out; }
         .moving-arrow.anim-vuelta { animation: animVuelta 2s infinite ease-in-out; }
 
-        /* Línea horizontal */
         .map-container { 
             position: relative; width: 100%; 
             height: 16px;
@@ -181,20 +176,17 @@
         .line-bg { position: absolute; width: 100%; height: 16px; background-color: var(--color-line-bg); border-radius: 8px; top: 0; }
         .line-progress { position: absolute; height: 16px; background-color: var(--color-linea-activa); border-radius: 8px; top: 0; transition: width 0.1s linear; }
 
-        /* Nodos centrados sobre la línea */
         .stations-container { 
             position: absolute; width: 100%; 
             top: 50%; transform: translateY(-50%);
             display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* Cada nodo: solo el dot en flujo. Nombre y combos son absolutos. */
         .station-node { 
             position: relative; 
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* Todos los dots: base hueco blanco con borde color línea */
         .dot { 
             width: 22px; height: 22px; 
             border-radius: 50%; z-index: 2;
@@ -208,49 +200,34 @@
         }
         .dot.passed, .dot.future { background-color: white; border-color: var(--color-linea-activa); }
 
-        /* bajada-centro: círculo blanco con franja horizontal del color de línea en el medio */
         .dot.bajada-centro::after {
-            content: ''; display: block;
-            position: absolute;
-            width: 100%; height: 35%;
-            background-color: var(--color-linea-activa);
+            content: ''; display: block; position: absolute;
+            width: 100%; height: 35%; background-color: var(--color-linea-activa);
         }
 
-        /* bajada-centroizqder: inverso de centro — círculo relleno del color de línea
-           con franja horizontal BLANCA en el medio */
         .dot.bajada-centroizqder {
-            background-color: var(--color-linea-activa);
-            border-color: var(--color-linea-activa);
+            background-color: var(--color-linea-activa); border-color: var(--color-linea-activa);
         }
         .dot.bajada-centroizqder::after {
-            content: ''; display: block;
-            position: absolute;
-            width: 100%; height: 35%;
-            background-color: white;
+            content: ''; display: block; position: absolute;
+            width: 100%; height: 35%; background-color: white;
         }
 
-        /* bajada-izqder: círculo relleno del color de línea con borde blanco grueso interno */
         .dot.bajada-izqder {
             background-color: var(--color-linea-activa);
-            border: 4px solid white;
-            box-shadow: 0 0 0 4px var(--color-linea-activa);
+            border: 4px solid white; box-shadow: 0 0 0 4px var(--color-linea-activa);
         }
 
-        /* Próxima: más grande, hueco, aura pulsante */
         .dot.next { 
-            width: 34px; height: 34px;
-            border: 5px solid var(--color-linea-activa);
-            background-color: white;
-            z-index: 4;
-            margin: -6px;
+            width: 34px; height: 34px; border: 5px solid var(--color-linea-activa);
+            background-color: white; z-index: 4; margin: -6px;
             animation: aura-pulse 2s ease-out infinite;
         }
         .dot.next.bajada-centro::after { height: 35%; }
         .dot.next.bajada-centroizqder { background-color: var(--color-linea-activa); border-color: var(--color-linea-activa); }
         .dot.next.bajada-centroizqder::after { height: 35%; background-color: white; }
         .dot.next.bajada-izqder {
-            background-color: var(--color-linea-activa);
-            border: 5px solid white;
+            background-color: var(--color-linea-activa); border: 5px solid white;
             box-shadow: 0 0 0 5px var(--color-linea-activa);
         }
         @keyframes aura-pulse {
@@ -259,11 +236,8 @@
             100% { box-shadow: 0 0 0 0   rgba(var(--color-linea-activa-rgb, 0,114,187), 0.0); }
         }
 
-        /* Combinaciones: absolutas, centradas debajo del dot */
         .map-combos { 
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 50%; transform: translateX(-50%);
+            position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
             display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; 
             width: 66px; z-index: 3; 
         }
@@ -274,28 +248,21 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.18); flex-shrink: 0;
         }
 
-        /* Nombre: absoluto, rotado -45° desde el centro del dot */
         .station-name { 
-            position: absolute; 
-            bottom: calc(100% + 12px);
-            left: 50%;
-            transform: rotate(-45deg); 
-            transform-origin: bottom left; 
-            font-size: 18px; font-weight: 600;
-            white-space: nowrap;
-            line-height: 1.2;
-            color: var(--color-text-muted);
+            position: absolute; bottom: calc(100% + 12px); left: 50%;
+            transform: rotate(-45deg); transform-origin: bottom left; 
+            font-size: 18px; font-weight: 600; white-space: nowrap;
+            line-height: 1.2; color: var(--color-text-muted);
         }
         .station-node.next .station-name { color: var(--color-text-main); font-weight: bold; font-size: 20px; }
 
-        /* === VISTA LLEGADA — nombre arriba, 3 recuadros abajo === */
+        /* === VISTA LLEGADA — nombre y combinaciones === */
         .arrival-view {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             display: flex; flex-direction: column;
             background: var(--color-bg);
         }
 
-        /* FRANJA SUPERIOR: nombre estación */
         .arr-header {
             height: 44%;
             display: flex; align-items: center; justify-content: center;
@@ -305,51 +272,37 @@
             padding: 0 60px;
         }
 
-        /* Bloque de descenso por mano — a la derecha del header */
         .arr-descenso {
-            margin-left: auto;
-            display: flex; flex-direction: column; align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
+            margin-left: auto; display: flex; flex-direction: column; align-items: center;
+            gap: 6px; flex-shrink: 0;
         }
         .arr-descenso-label {
             font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
             text-transform: uppercase; color: var(--color-text-muted);
         }
-        .arr-descenso-dir {
-            display: flex; align-items: center; gap: 10px;
-        }
-        .arr-descenso-flecha {
-            display: flex; align-items: center;
-        }
+        .arr-descenso-dir { display: flex; align-items: center; gap: 10px; }
+        .arr-descenso-flecha { display: flex; align-items: center; }
         .arr-descenso-flecha svg {
-            width: 52px; height: 52px;
-            stroke: var(--color-linea-activa); fill: none;
+            width: 52px; height: 52px; stroke: var(--color-linea-activa); fill: none;
             stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
         }
         .arr-descenso-texto {
-            font-size: 28px; font-weight: 800;
-            color: var(--color-text-main); line-height: 1;
+            font-size: 28px; font-weight: 800; color: var(--color-text-main); line-height: 1;
         }
         .arr-descenso-sub {
-            font-size: 14px; color: var(--color-text-muted);
-            font-weight: 500; margin-top: 2px;
+            font-size: 14px; color: var(--color-text-muted); font-weight: 500; margin-top: 2px;
         }
-        .arr-descenso-ambos {
-            display: flex; gap: 6px; align-items: center;
-        }
+        .arr-descenso-ambos { display: flex; gap: 6px; align-items: center; }
+
         .arr-linea-badge {
             width: 64px; height: 64px; border-radius: 14px;
-            background: var(--color-linea-activa);
-            color: white; font-size: 32px; font-weight: 900;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
+            background: var(--color-linea-activa); color: white; font-size: 32px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .arr-header-textos { display: flex; flex-direction: column; align-items: flex-start; }
         .arr-header-label {
             font-size: 16px; font-weight: 700; letter-spacing: 2px;
-            text-transform: uppercase; color: var(--color-text-muted);
-            line-height: 1;
+            text-transform: uppercase; color: var(--color-text-muted); line-height: 1;
         }
         .arr-nombre {
             font-size: 64px; font-weight: 900; line-height: 1;
@@ -358,24 +311,16 @@
         .arr-nombre.largo    { font-size: 50px; }
         .arr-nombre.muy-largo{ font-size: 38px; }
 
-        /* FILA INFERIOR: 3 recuadros */
+        /* Fila inferior: Solo combinaciones */
         .arr-cards {
-            flex: 1;
-            display: flex; flex-direction: row;
-            gap: 0;
+            flex: 1; display: flex; flex-direction: row; gap: 0;
         }
 
         .arr-card {
-            flex: 1;
-            display: flex; flex-direction: column;
+            flex: 1; display: flex; flex-direction: column;
             align-items: flex-start; justify-content: flex-start;
-            padding: 20px 34px 22px;
-            border-right: 2px solid rgba(0,0,0,0.07);
-            gap: 10px;
-            background: #f8fafc;
+            padding: 24px 60px; background: white;
         }
-        .arr-card:last-child { border-right: none; background: white; }
-        .arr-card:first-child { background: #f0f4f8; }
 
         .arr-card-titulo {
             font-size: 17px; font-weight: 700; letter-spacing: 1.4px;
@@ -385,33 +330,23 @@
             padding-bottom: 6px;
         }
 
-        /* Fila de icono + texto dentro de la card */
-        .arr-card-row {
-            display: flex; align-items: center; gap: 14px; width: 100%;
+        /* Contenedor flexible para alinear combinaciones horizontalmente */
+        .arr-combos-container {
+            display: flex; flex-direction: row; gap: 40px; flex-wrap: wrap; margin-top: 10px; width: 100%;
         }
 
-        /* ICONOS PICTOGRAMA — azul internacional */
-        .pic-icon {
-            width: 52px; height: 52px; border-radius: 10px;
-            background: #005baa;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
+        .arr-card-row {
+            display: flex; align-items: center; gap: 14px;
         }
-        .pic-icon.verde  { background: var(--color-linea-activa); }
-        .pic-icon.gris   { background: #4b5563; }
-        .pic-icon.amarillo { background: #d97706; }
-        .pic-icon svg { width: 32px; height: 32px; fill: white; }
 
         .arr-card-texto {
-            font-size: 24px; font-weight: 700; color: var(--color-text-main);
-            line-height: 1.15;
+            font-size: 24px; font-weight: 700; color: var(--color-text-main); line-height: 1.15;
         }
         .arr-card-subtexto {
             font-size: 16px; font-weight: 500; color: var(--color-text-muted);
             line-height: 1.2; margin-top: -4px;
         }
 
-        /* Badge de línea/tren dentro de cards de combinación */
         .arr-comb-badge {
             min-width: 48px; height: 48px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
@@ -420,12 +355,7 @@
         }
         .arr-comb-badge .svg-icon { width: 90%; height: 58%; }
 
-        .arr-flecha-dir {
-            margin-left: auto; flex-shrink: 0;
-        }
-        .arr-flecha-dir svg { width: 36px; height: 36px; stroke: var(--color-linea-activa); fill: none; stroke-width: 2.5; stroke-linecap: round; }
-
-        .arr-sin-comb { font-size: 20px; color: var(--color-text-muted); font-style: italic; }
+        .arr-sin-comb { font-size: 24px; color: var(--color-text-muted); font-style: italic; }
         .svg-icon { width: 65%; height: 65%; fill: currentColor; display: block; }
         .map-combo-badge .svg-icon { width: 70%; height: 70%; }
     </style>
@@ -509,10 +439,8 @@
                 </div>
                 <div class="arr-descenso" id="arr-descenso"></div>
             </div>
-            <!-- 3 RECUADROS -->
+            <!-- RECUADRO ÚNICO DE COMBINACIONES -->
             <div class="arr-cards">
-                <div class="arr-card" id="arr-card-escalera"></div>
-                <div class="arr-card" id="arr-card-ascensor"></div>
                 <div class="arr-card" id="arr-card-combos"></div>
             </div>
         </div>
@@ -590,7 +518,6 @@
             'Tren Roca': 'Ro', 'Tren Urquiza': 'Ur', 'Tren Belgrano N.': 'BN'
         };
 
-        // Detecta si un color hex es claro → texto oscuro, si es oscuro → texto blanco
         function textoSobre(hex) {
             const r = parseInt(hex.slice(1,3),16);
             const g = parseInt(hex.slice(3,5),16);
@@ -613,6 +540,7 @@
         function formatStationName(nombre) {
             const ESPECIALES = {
                 'Marinos del Crucero General Belgrano': 'Marinos del<br>Crucero Gral. Belgrano',
+                'D. Santillán y M. Kosteki (Avellaneda)': 'Avellaneda<br>(Santillán y Kosteki)'
             };
             if (ESPECIALES[nombre]) return ESPECIALES[nombre];
 
@@ -709,7 +637,6 @@
             });
         }
 
-
         function initDisplay() {
             const sigla = TREN_SIGLAS[LINEA_A_MOSTRAR] || LINEA_A_MOSTRAR.substring(0,2);
             document.getElementById('logo-linea').innerText = sigla;
@@ -730,8 +657,6 @@
                 arrow.className = "moving-arrow anim-vuelta";
                 progressBar.style.right = "0"; progressBar.style.left = "auto";
             }
-			
-	
 
             ESTACIONES.forEach((est, idx) => {
                 const node = document.createElement('div');
@@ -870,48 +795,7 @@
                 if (est.nombre.length > 22) nombreEl.classList.add('muy-largo');
                 else if (est.nombre.length > 14) nombreEl.classList.add('largo');
 
-                const salidaIzq = (nextIndex % 2 === 0);
-
-                function flechaH(izq) {
-                    return izq
-                        ? `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:42px;height:42px;flex-shrink:0;stroke:var(--color-linea-activa)"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`
-                        : `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:42px;height:42px;flex-shrink:0;stroke:var(--color-linea-activa)"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
-                }
-
-                const SVG = {
-                    escalera: `<svg viewBox="0 0 24 24"><path d="M4 21h2v-4h4v-4h4v-4h4V5h2v6h-4v4h-4v4H8v4H4v-2z" fill="white"/></svg>`,
-                    ascensor: `<svg viewBox="0 0 24 24"><path d="M7 2h10c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm5 2.5L9 8h6l-3-3.5zM12 19l3-3.5H9l3 3.5zm-1-6h2v2h-2v-2zm0-3.5h2v2h-2v-2z" fill="white"/></svg>`,
-                };
-
-                let salidasArr = est.salidas ? est.salidas : ["Salida Principal"];
-                const salidasHTML = salidasArr.map((s, i) => {
-                    const izqEsta = (salidaIzq && i % 2 === 0) || (!salidaIzq && i % 2 !== 0);
-                    return `<div class="arr-card-row" style="margin-bottom:8px">
-                        ${izqEsta ? flechaH(true) : ''}
-                        <div class="pic-icon gris">${SVG.escalera}</div>
-                        <div style="flex:1">
-                            <div class="arr-card-texto">${s}</div>
-                        </div>
-                        ${!izqEsta ? flechaH(false) : ''}
-                    </div>`;
-                }).join('');
-                document.getElementById('arr-card-escalera').innerHTML =
-                    `<div class="arr-card-titulo">Salidas — Escalera</div>${salidasHTML}`;
-
-                const ascensorIzq = !salidaIzq;
-                const calleAscensor = salidasArr[0] || 'Av. Principal';
-                document.getElementById('arr-card-ascensor').innerHTML = `
-                    <div class="arr-card-titulo">Ascensor</div>
-                    <div class="arr-card-row">
-                        ${ascensorIzq ? flechaH(true) : ''}
-                        <div class="pic-icon">${SVG.ascensor}</div>
-                        <div style="flex:1">
-                            <div class="arr-card-texto">${calleAscensor}</div>
-                            <div class="arr-card-subtexto">Plataforma → Calle · Acceso PMR</div>
-                        </div>
-                        ${!ascensorIzq ? flechaH(false) : ''}
-                    </div>`;
-
+                // --- COMBINACIONES (Sin calles ni ascensor) ---
                 if (tieneCombos) {
                     const combosHTML = est.comb.map(c => {
                         const color = (typeof COLORS_TRENES_COMB !== 'undefined' && COLORS_TRENES_COMB[c]) ? COLORS_TRENES_COMB[c] : '#555';
@@ -934,20 +818,21 @@
                             }
                         }
 
-                        return `<div class="arr-card-row" style="margin-bottom:10px">
+                        return `<div class="arr-card-row">
                             <div class="arr-comb-badge" style="background:${color};color:${textoSobre(color)}">${getCombContent(c, false)}</div>
-                            <div style="flex:1">
+                            <div>
                                 <div class="arr-card-texto">${label}</div>
                                 <div class="arr-card-subtexto">${subtexto}</div>
                             </div>
                         </div>`;
                     }).join('');
                     document.getElementById('arr-card-combos').innerHTML =
-                        `<div class="arr-card-titulo">Combinaciones</div>${combosHTML}`;
+                        `<div class="arr-card-titulo">Combinaciones</div>
+                         <div class="arr-combos-container">${combosHTML}</div>`;
                 } else {
                     document.getElementById('arr-card-combos').innerHTML = `
                         <div class="arr-card-titulo">Combinaciones</div>
-                        <div class="arr-sin-comb">Sin combinaciones<br>en esta estación</div>`;
+                        <div class="arr-sin-comb" style="margin-top: 15px;">Sin combinaciones en esta estación</div>`;
                 }
             }
         }
