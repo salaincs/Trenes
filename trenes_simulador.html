@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Red Trenes - Pantalla Stretch 37"</title>
+    
+    <script src="datos_trenes.js"></script>
+
+    <style>
+        :root {
+            --color-bg: #f8fafc;
+            --color-sidebar: #e2e8f0;
+            --color-linea-activa: #0072BB; 
+            --color-text-main: #0f172a;
+            --color-text-muted: #64748b;
+            --color-line-bg: #cbd5e1;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            
+            /* Resolución física exacta */
+            --screen-width: 1920px;
+            --screen-height: 540px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--color-bg); 
+            color: var(--color-text-main);
+            display: flex; 
+            width: 1920px; 
+            height: 540px; 
+            overflow: hidden; 
+            user-select: none;
+            position: absolute;
+            top: 0; left: 0;
+            transform-origin: top left;
+        }
+
+        /* --- EFECTOS DE CLIMA --- */
+        .capa-clima {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; overflow: hidden; display: none;
+            opacity: 0; transition: opacity 1.5s ease;
+        }
+        .capa-clima.activa { display: block; }
+
+        /* LLUVIA */
+        .gota {
+            position: absolute; width: 1.5px; height: 45px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(120,170,220,0.55));
+            border-radius: 2px; animation: caer linear infinite;
+        }
+        @keyframes caer {
+            0%   { transform: translateY(-60px) skewX(-8deg); opacity: 0; }
+            8%   { opacity: 1; }
+            92%  { opacity: 1; }
+            100% { transform: translateY(580px) skewX(-8deg); opacity: 0; }
+        }
+        /* Overlay azulado tenue para lluvia */
+        .overlay-lluvia {
+            position: absolute; inset: 0;
+            background: rgba(80, 110, 160, 0.08);
+        }
+
+        /* SOL — rayos que salen de una esquina */
+        .efecto-sol {
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 92% -5%, 
+                rgba(255,220,80,0.30) 0%, 
+                rgba(255,200,60,0.12) 25%, 
+                rgba(255,255,255,0) 60%);
+            animation: sol-pulso 4s ease-in-out infinite;
+        }
+        @keyframes sol-pulso {
+            0%, 100% { opacity: 0.85; }
+            50%       { opacity: 1.0; }
+        }
+        .rayo-sol {
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 600px; height: 600px;
+            transform-origin: top right;
+            background: linear-gradient(to bottom-left, rgba(255,220,80,0.13), rgba(255,220,80,0));
+            animation: rayo-girar 8s linear infinite;
+        }
+        @keyframes rayo-girar {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        /* NUBLADO — manchas difusas que se desplazan */
+        .nube {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(180,190,200,0.13);
+            filter: blur(40px);
+            animation: nube-flotar linear infinite;
+        }
+        @keyframes nube-flotar {
+            from { transform: translateX(-200px); }
+            to   { transform: translateX(2200px); }
+        }
+
+        /* --- PANEL LATERAL --- */
+        .sidebar {
+            width: 380px; height: 100%; flex-shrink: 0;
+            background-color: var(--color-sidebar); 
+            padding: 16px 24px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 10;
+            transition: margin-left 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        
+        .sidebar.oculta { margin-left: -380px; }
+
+        .sidebar-top { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+        
+        .logo-d {
+            width: 62px; height: 62px; background-color: var(--color-linea-activa);
+            color: var(--color-on-linea, white); font-size: 32px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .side-group { margin-bottom: 10px; }
+        .side-label { font-size: 13px; font-weight: bold; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+        .side-value { font-size: 26px; font-weight: bold; line-height: 1.1; }
+        .side-value.highlight { color: var(--color-linea-activa); font-size: 30px; }
+        
+        .fecha-texto { font-size: 18px; color: var(--color-text-muted); margin-bottom: 2px; text-transform: capitalize; font-weight: 500; }
+        .clock { font-size: 50px; font-weight: bold; line-height: 1; }
+
+        .sensor-panel {
+            background-color: white; padding: 9px 14px;
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); margin-bottom: 8px;
+        }
+        .sensor-row { display: flex; gap: 10px; }
+        .sensor-box { display: flex; flex-direction: column; }
+        .sensor-val { font-size: 22px; font-weight: bold; color: var(--color-text-main); line-height: 1.2; }
+        .weather-layout { display: flex; align-items: center; gap: 10px; }
+        .weather-icon { font-size: 34px; line-height: 1; }
+
+        .sidebar-bottom { 
+            background-color: var(--color-linea-activa);
+            border-radius: 10px; padding: 14px 16px;
+        }
+        .sidebar-bottom .side-label { color: var(--color-on-linea-muted, rgba(255,255,255,0.75)); }
+        .sidebar-bottom .side-value.highlight { color: var(--color-on-linea, white); font-size: 28px; }
+
+        /* --- ÁREA PRINCIPAL --- */
+        .main-content { flex-grow: 1; position: relative; height: 100%; }
+
+        .view-layer {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none;
+        }
+        .view-layer.active { opacity: 1; pointer-events: auto; }
+
+        /* --- VISTA MAPA --- */
+        .map-wrapper { position: relative; width: 92%; height: 280px; display: flex; flex-direction: column; justify-content: center; padding-right: 160px; }
+
+        .arrow-container { position: absolute; top: -120px; width: 100%; display: flex; }
+        .arrow-container.ida { justify-content: flex-end; }
+        .arrow-container.vuelta { justify-content: flex-start; }
+        
+        .moving-arrow { font-size: 110px; color: var(--color-linea-activa); font-weight: 900; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        @keyframes animIda { 0% { transform: translateX(0); } 50% { transform: translateX(30px); } 100% { transform: translateX(0); } }
+        @keyframes animVuelta { 0% { transform: translateX(0); } 50% { transform: translateX(-30px); } 100% { transform: translateX(0); } }
+        .moving-arrow.anim-ida { animation: animIda 2s infinite ease-in-out; }
+        .moving-arrow.anim-vuelta { animation: animVuelta 2s infinite ease-in-out; }
+
+        /* Línea horizontal */
+        .map-container { 
+            position: relative; width: 100%; 
+            height: 16px;
+            margin-top: 130px;
+        }
+        .line-bg { position: absolute; width: 100%; height: 16px; background-color: var(--color-line-bg); border-radius: 8px; top: 0; }
+        .line-progress { position: absolute; height: 16px; background-color: var(--color-linea-activa); border-radius: 8px; top: 0; transition: width 0.1s linear; }
+
+        /* Nodos centrados sobre la línea */
+        .stations-container { 
+            position: absolute; width: 100%; 
+            top: 50%; transform: translateY(-50%);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* Cada nodo: solo el dot en flujo. Nombre y combos son absolutos. */
+        .station-node { 
+            position: relative; 
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Todos los dots: base hueco blanco con borde color línea */
+        .dot { 
+            width: 22px; height: 22px; 
+            border-radius: 50%; z-index: 2;
+            background-color: white;
+            border: 4px solid var(--color-linea-activa);
+            box-sizing: border-box;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .dot.passed, .dot.future { background-color: white; border-color: var(--color-linea-activa); }
+
+        /* bajada-centro: círculo blanco con franja horizontal del color de línea en el medio */
+        .dot.bajada-centro::after {
+            content: ''; display: block;
+            position: absolute;
+            width: 100%; height: 35%;
+            background-color: var(--color-linea-activa);
+        }
+
+        /* bajada-centroizqder: inverso de centro — círculo relleno del color de línea
+           con franja horizontal BLANCA en el medio */
+        .dot.bajada-centroizqder {
+            background-color: var(--color-linea-activa);
+            border-color: var(--color-linea-activa);
+        }
+        .dot.bajada-centroizqder::after {
+            content: ''; display: block;
+            position: absolute;
+            width: 100%; height: 35%;
+            background-color: white;
+        }
+
+        /* bajada-izqder: círculo relleno del color de línea con borde blanco grueso interno */
+        .dot.bajada-izqder {
+            background-color: var(--color-linea-activa);
+            border: 4px solid white;
+            box-shadow: 0 0 0 4px var(--color-linea-activa);
+        }
+
+        /* Próxima: más grande, hueco, aura pulsante */
+        .dot.next { 
+            width: 34px; height: 34px;
+            border: 5px solid var(--color-linea-activa);
+            background-color: white;
+            z-index: 4;
+            margin: -6px;
+            animation: aura-pulse 2s ease-out infinite;
+        }
+        .dot.next.bajada-centro::after { height: 35%; }
+        .dot.next.bajada-centroizqder { background-color: var(--color-linea-activa); border-color: var(--color-linea-activa); }
+        .dot.next.bajada-centroizqder::after { height: 35%; background-color: white; }
+        .dot.next.bajada-izqder {
+            background-color: var(--color-linea-activa);
+            border: 5px solid white;
+            box-shadow: 0 0 0 5px var(--color-linea-activa);
+        }
+        @keyframes aura-pulse {
+            0%   { box-shadow: 0 0 0 0   rgba(var(--color-linea-activa-rgb, 0,114,187), 0.55); }
+            70%  { box-shadow: 0 0 0 14px rgba(var(--color-linea-activa-rgb, 0,114,187), 0.0); }
+            100% { box-shadow: 0 0 0 0   rgba(var(--color-linea-activa-rgb, 0,114,187), 0.0); }
+        }
+
+        /* Combinaciones: absolutas, centradas debajo del dot */
+        .map-combos { 
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%; transform: translateX(-50%);
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; 
+            width: 66px; z-index: 3; 
+        }
+        .map-combo-badge { 
+            width: 26px; height: 26px; border-radius: 7px; 
+            display: flex; align-items: center; justify-content: center; 
+            color: white; font-size: 12px; font-weight: bold; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.18); flex-shrink: 0;
+        }
+
+        /* Nombre: absoluto, rotado -45° desde el centro del dot */
+        .station-name { 
+            position: absolute; 
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: rotate(-45deg); 
+            transform-origin: bottom left; 
+            font-size: 18px; font-weight: 600;
+            white-space: nowrap;
+            line-height: 1.2;
+            color: var(--color-text-muted);
+        }
+        .station-node.next .station-name { color: var(--color-text-main); font-weight: bold; font-size: 20px; }
+
+        /* === VISTA LLEGADA — nombre arriba, 3 recuadros abajo === */
+        .arrival-view {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column;
+            background: var(--color-bg);
+        }
+
+        /* FRANJA SUPERIOR: nombre estación */
+        .arr-header {
+            height: 44%;
+            display: flex; align-items: center; justify-content: center;
+            background: white;
+            border-bottom: 3px solid var(--color-linea-activa);
+            gap: 28px;
+            padding: 0 60px;
+        }
+
+        /* Bloque de descenso por mano — a la derecha del header */
+        .arr-descenso {
+            margin-left: auto;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .arr-descenso-label {
+            font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+            text-transform: uppercase; color: var(--color-text-muted);
+        }
+        .arr-descenso-dir {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .arr-descenso-flecha {
+            display: flex; align-items: center;
+        }
+        .arr-descenso-flecha svg {
+            width: 52px; height: 52px;
+            stroke: var(--color-linea-activa); fill: none;
+            stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .arr-descenso-texto {
+            font-size: 28px; font-weight: 800;
+            color: var(--color-text-main); line-height: 1;
+        }
+        .arr-descenso-sub {
+            font-size: 14px; color: var(--color-text-muted);
+            font-weight: 500; margin-top: 2px;
+        }
+        .arr-descenso-ambos {
+            display: flex; gap: 6px; align-items: center;
+        }
+        .arr-linea-badge {
+            width: 64px; height: 64px; border-radius: 14px;
+            background: var(--color-linea-activa);
+            color: white; font-size: 32px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .arr-header-textos { display: flex; flex-direction: column; align-items: flex-start; }
+        .arr-header-label {
+            font-size: 16px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--color-text-muted);
+            line-height: 1;
+        }
+        .arr-nombre {
+            font-size: 64px; font-weight: 900; line-height: 1;
+            color: var(--color-text-main); letter-spacing: -1px;
+        }
+        .arr-nombre.largo    { font-size: 50px; }
+        .arr-nombre.muy-largo{ font-size: 38px; }
+
+        /* FILA INFERIOR: 3 recuadros */
+        .arr-cards {
+            flex: 1;
+            display: flex; flex-direction: row;
+            gap: 0;
+        }
+
+        .arr-card {
+            flex: 1;
+            display: flex; flex-direction: column;
+            align-items: flex-start; justify-content: flex-start;
+            padding: 20px 34px 22px;
+            border-right: 2px solid rgba(0,0,0,0.07);
+            gap: 10px;
+            background: #f8fafc;
+        }
+        .arr-card:last-child { border-right: none; background: white; }
+        .arr-card:first-child { background: #f0f4f8; }
+
+        .arr-card-titulo {
+            font-size: 17px; font-weight: 700; letter-spacing: 1.4px;
+            text-transform: uppercase; color: var(--color-text-muted);
+            margin-bottom: 8px; width: 100%;
+            border-bottom: 2px solid var(--color-linea-activa);
+            padding-bottom: 6px;
+        }
+
+        /* Fila de icono + texto dentro de la card */
+        .arr-card-row {
+            display: flex; align-items: center; gap: 14px; width: 100%;
+        }
+
+        /* ICONOS PICTOGRAMA — azul internacional */
+        .pic-icon {
+            width: 52px; height: 52px; border-radius: 10px;
+            background: #005baa;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .pic-icon.verde  { background: var(--color-linea-activa); }
+        .pic-icon.gris   { background: #4b5563; }
+        .pic-icon.amarillo { background: #d97706; }
+        .pic-icon svg { width: 32px; height: 32px; fill: white; }
+
+        .arr-card-texto {
+            font-size: 24px; font-weight: 700; color: var(--color-text-main);
+            line-height: 1.15;
+        }
+        .arr-card-subtexto {
+            font-size: 16px; font-weight: 500; color: var(--color-text-muted);
+            line-height: 1.2; margin-top: -4px;
+        }
+
+        /* Badge de línea/tren dentro de cards de combinación */
+        .arr-comb-badge {
+            min-width: 48px; height: 48px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px; font-weight: 900;
+            padding: 0 8px; flex-shrink: 0;
+        }
+        .arr-comb-badge .svg-icon { width: 90%; height: 58%; }
+
+        .arr-flecha-dir {
+            margin-left: auto; flex-shrink: 0;
+        }
+        .arr-flecha-dir svg { width: 36px; height: 36px; stroke: var(--color-linea-activa); fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+        .arr-sin-comb { font-size: 20px; color: var(--color-text-muted); font-style: italic; }
+        .svg-icon { width: 65%; height: 65%; fill: currentColor; display: block; }
+        .map-combo-badge .svg-icon { width: 70%; height: 70%; }
+    </style>
+</head>
+<body>
+
+    <div id="capa-clima" class="capa-clima"></div>
+
+    <div class="sidebar" id="main-sidebar">
+        <div>
+            <div class="sidebar-top">
+                <div class="logo-d" id="logo-linea">Mi</div>
+                <div class="side-group" style="margin-bottom: 0;">
+                    <div class="side-label">Dirección</div>
+                    <div class="side-value" id="direccion-valor">Cargando...</div>
+                </div>
+            </div>
+
+            <div class="side-group">
+                <div class="side-label">Fecha y Hora</div>
+                <div class="fecha-texto" id="fecha-actual">--</div>
+                <div class="side-value clock" id="clock">--:--</div>
+            </div>
+
+            <div class="sensor-panel">
+                <div class="side-label">Clima Exterior Buenos Aires</div>
+                <div class="weather-layout">
+                    <div class="weather-icon" id="ext-icon">⛅</div>
+                    <div class="sensor-box">
+                        <div class="sensor-val" id="ext-temp-value">19°C</div>
+                        <div class="side-label" id="ext-desc" style="margin:0; text-transform: none;">Parcialmente nublado</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensor-panel sensor-row">
+                <div class="sensor-box" style="flex:1;">
+                    <div class="side-label">Temp.</div>
+                    <div class="sensor-val" id="int-temp-value">22.5°C</div>
+                </div>
+                <div class="sensor-box" style="flex:1;">
+                    <div class="side-label">Hum.</div>
+                    <div class="sensor-val" id="int-hum-value">45%</div>
+                </div>
+                <div class="sensor-box" style="flex:1;">
+                    <div class="side-label">IAQ</div>
+                    <div class="sensor-val" id="int-iaq-value">72</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="side-label" id="next-label">Próxima Estación</div>
+            <div class="side-value highlight" id="next-station-name">...</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="view-layer" id="view-map">
+            <div class="map-wrapper">
+                
+                <div class="arrow-container" id="arrow-container">
+                    <span class="moving-arrow" id="dir-arrow"></span>
+                </div>
+
+                <div class="map-container">
+                    <div class="line-bg"></div>
+                    <div class="line-progress" id="progress-bar"></div>
+                    <div class="stations-container" id="stations-track"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="view-layer arrival-view" id="view-arrival">
+            <!-- FRANJA SUPERIOR: nombre -->
+            <div class="arr-header">
+                <div class="arr-linea-badge" id="arr-badge">Mi</div>
+                <div class="arr-header-textos">
+                    <div class="arr-header-label">Estación actual</div>
+                    <div class="arr-nombre" id="arrival-name">—</div>
+                </div>
+                <div class="arr-descenso" id="arr-descenso"></div>
+            </div>
+            <!-- 3 RECUADROS -->
+            <div class="arr-cards">
+                <div class="arr-card" id="arr-card-escalera"></div>
+                <div class="arr-card" id="arr-card-ascensor"></div>
+                <div class="arr-card" id="arr-card-combos"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESCALA EL BODY A 1920x540 EN CUALQUIER VIEWPORT ---
+        function scaleToViewport() {
+            const scaleX = window.innerWidth  / 1920;
+            const scaleY = window.innerHeight / 540;
+            document.body.style.transform = `scale(${Math.min(scaleX, scaleY)})`;
+        }
+        scaleToViewport();
+        window.addEventListener('resize', scaleToViewport);
+
+        // ==========================================
+        // CONFIGURACIÓN PRINCIPAL DEL DISPLAY
+        // ==========================================
+        const _params = new URLSearchParams(location.search);
+        const LINEA_A_MOSTRAR = _params.get('linea') || "MITRE";
+        const SENTIDO_MOSTRAR = _params.get('sentido') || "VUELTA";
+        const CLIMA = "NORMAL"; 
+        
+        const DATOS_LINEA = RED_TRENES[LINEA_A_MOSTRAR];
+        const ESTACIONES = DATOS_LINEA.estaciones; 
+        
+        const esIda = SENTIDO_MOSTRAR === "IDA";
+        const DESTINO_FINAL = esIda ? ESTACIONES[ESTACIONES.length - 1].nombre : ESTACIONES[0].nombre;
+        
+        document.documentElement.style.setProperty('--color-linea-activa', DATOS_LINEA.color);
+        // Texto sobre fondo del color de línea
+        document.documentElement.style.setProperty('--color-on-linea', 'white');
+        document.documentElement.style.setProperty('--color-on-linea-muted', 'rgba(255,255,255,0.75)');
+        
+        // RGB para animación aura
+        const _c = DATOS_LINEA.color;
+        document.documentElement.style.setProperty('--color-linea-activa-rgb',
+            `${parseInt(_c.slice(1,3),16)},${parseInt(_c.slice(3,5),16)},${parseInt(_c.slice(5,7),16)}`);
+
+        let currentIndex = esIda ? 0 : ESTACIONES.length - 1;
+        let nextIndex = esIda ? 1 : ESTACIONES.length - 2;
+        let currentProgress = esIda ? 0.0 : 1.0; 
+        let isMoving = true;
+
+        const viewMap = document.getElementById('view-map');
+        const viewArrival = document.getElementById('view-arrival');
+        const track = document.getElementById('stations-track');
+        const progressBar = document.getElementById('progress-bar');
+        const uiClock = document.getElementById('clock');
+        const uiFecha = document.getElementById('fecha-actual');
+        const uiNextName = document.getElementById('next-station-name');
+        const sidebar = document.getElementById('main-sidebar');
+
+        const iconTren = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+  <!-- Frente del tren -->
+  <path d="M4 16V6c0-3 3-4 8-4s8 1 8 4v10c0 2-1.5 3.5-3.5 3.5h-9C5.5 19.5 4 18 4 16z"/>
+  <!-- Ventana -->
+  <path d="M6 6h12v4H6z"/>
+  <!-- Divisiones ventana -->
+  <path d="M10 6v4M14 6v4"/>
+  <!-- Faros -->
+  <circle cx="7.5" cy="15" r="1"/>
+  <circle cx="16.5" cy="15" r="1"/>
+  <!-- Vías de subterráneo -->
+  <path d="M2 21h20"/>
+  <path d="M6 21l2-2.5M18 21l-2-2.5"/>
+</svg>`;
+
+        const iconBus = `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v6z"/></svg>`;
+
+        const TREN_SIGLAS = {
+            'MITRE': 'Mi', 'SARMIENTO': 'Sa', 'ROCA': 'Ro',
+            'SAN_MARTIN': 'SM', 'BELGRANO_N': 'BN', 'URQUIZA': 'Ur',
+            'Tren San Martín': 'SM', 'Tren Mitre': 'Mi', 'Tren Sarmiento': 'Sa',
+            'Tren Roca': 'Ro', 'Tren Urquiza': 'Ur', 'Tren Belgrano N.': 'BN'
+        };
+
+        // Detecta si un color hex es claro → texto oscuro, si es oscuro → texto blanco
+        function textoSobre(hex) {
+            const r = parseInt(hex.slice(1,3),16);
+            const g = parseInt(hex.slice(3,5),16);
+            const b = parseInt(hex.slice(5,7),16);
+            const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+            return lum > 0.55 ? '#2d2d2d' : 'white';
+        }
+
+        function getCombContent(combName, small = false) {
+            if (combName.startsWith("subte_")) return combName.split("_")[1];
+            if (combName === "Premetro") return "P";
+            const n = combName.toLowerCase();
+            if (n.includes("omnibus") || n.includes("bus")) return iconBus;
+            if (TREN_SIGLAS[combName] || n.includes("tren") || n.includes("urquiza")) {
+                return small ? (TREN_SIGLAS[combName] || "T") : iconTren;
+            }
+            return combName;
+        }
+
+        function formatStationName(nombre) {
+            const ESPECIALES = {
+                'Marinos del Crucero General Belgrano': 'Marinos del<br>Crucero Gral. Belgrano',
+            };
+            if (ESPECIALES[nombre]) return ESPECIALES[nombre];
+
+            if (nombre.includes(' - ')) {
+                const idx = nombre.indexOf(' - ');
+                return nombre.slice(0, idx) + ' -<br>' + nombre.slice(idx + 3);
+            }
+            if (nombre.length > 25) {
+                const mid = Math.floor(nombre.length / 2);
+                let best = -1, bestDist = Infinity;
+                for (let i = 0; i < nombre.length; i++) {
+                    if (nombre[i] === ' ') {
+                        const d = Math.abs(i - mid);
+                        if (d < bestDist) { bestDist = d; best = i; }
+                    }
+                }
+                return best === -1 ? nombre : nombre.slice(0, best) + '<br>' + nombre.slice(best + 1);
+            }
+            return nombre;
+        }
+
+        const CICLO_CLIMAS = ['NORMAL', 'LLUVIOSO', 'SOLEADO', 'NUBLADO'];
+        let climaActual = 0;       
+        let contadorEstaciones = 0; 
+
+        function limpiarClima() {
+            const capa = document.getElementById('capa-clima');
+            capa.classList.add('fade-out');
+            setTimeout(() => {
+                capa.innerHTML = '';
+                capa.classList.remove('activa', 'fade-out');
+                capa.style.opacity = '';
+            }, 1500);
+        }
+
+        function aplicarClima(clima) {
+            const capa = document.getElementById('capa-clima');
+            const icono = document.getElementById('ext-icon');
+            const desc  = document.getElementById('ext-desc');
+
+            capa.innerHTML = '';
+            capa.style.opacity = '0';
+            capa.classList.add('activa');
+
+            if (clima === 'LLUVIOSO') {
+                icono.innerText = '🌧️'; desc.innerText  = 'Lluvioso';
+                const ov = document.createElement('div');
+                ov.className = 'overlay-lluvia';
+                capa.appendChild(ov);
+                for (let i = 0; i < 80; i++) {
+                    const g = document.createElement('div');
+                    g.className = 'gota';
+                    g.style.left   = (Math.random() * 105) + '%';
+                    g.style.width  = (Math.random() * 1 + 1) + 'px';
+                    g.style.height = (Math.random() * 30 + 30) + 'px';
+                    g.style.animationDuration = (Math.random() * 0.4 + 0.35) + 's';
+                    g.style.animationDelay    = (Math.random() * 2) + 's';
+                    g.style.opacity = (Math.random() * 0.4 + 0.4).toFixed(2);
+                    capa.appendChild(g);
+                }
+            } else if (clima === 'SOLEADO') {
+                icono.innerText = '☀️'; desc.innerText  = 'Soleado';
+                const sol = document.createElement('div');
+                sol.className = 'efecto-sol';
+                capa.appendChild(sol);
+                for (let i = 0; i < 6; i++) {
+                    const r = document.createElement('div');
+                    r.className = 'rayo-sol';
+                    r.style.animationDelay    = (i * 1.3) + 's';
+                    r.style.animationDuration = (7 + i * 0.8) + 's';
+                    r.style.opacity = (0.4 + i * 0.06).toFixed(2);
+                    capa.appendChild(r);
+                }
+            } else if (clima === 'NUBLADO') {
+                icono.innerText = '☁️'; desc.innerText  = 'Nublado';
+                const sizes = [300,450,250,400,320];
+                sizes.forEach((sz, i) => {
+                    const n = document.createElement('div');
+                    n.className = 'nube';
+                    n.style.width  = sz + 'px';
+                    n.style.height = (sz * 0.55) + 'px';
+                    n.style.top    = (Math.random() * 80) + '%';
+                    n.style.left   = '-220px';
+                    n.style.animationDuration = (28 + i * 7) + 's';
+                    n.style.animationDelay    = (i * -6) + 's';
+                    capa.appendChild(n);
+                });
+            } else {
+                icono.innerText = '⛅'; desc.innerText  = 'Parcialmente nublado';
+            }
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => { capa.style.opacity = '1'; });
+            });
+        }
+
+
+        function initDisplay() {
+            const sigla = TREN_SIGLAS[LINEA_A_MOSTRAR] || LINEA_A_MOSTRAR.substring(0,2);
+            document.getElementById('logo-linea').innerText = sigla;
+            let destinoTexto = DESTINO_FINAL;
+            if (destinoTexto.includes(" de ")) destinoTexto = destinoTexto.replace(" de ", " de<br>");
+            document.getElementById('direccion-valor').innerHTML = destinoTexto;
+
+            const arrowContainer = document.getElementById('arrow-container');
+            const arrow = document.getElementById('dir-arrow');
+            if (esIda) {
+                arrow.innerText = "➡";
+                arrowContainer.className = "arrow-container ida";
+                arrow.className = "moving-arrow anim-ida";
+                progressBar.style.left = "0"; progressBar.style.right = "auto";
+            } else {
+                arrow.innerText = "⬅";
+                arrowContainer.className = "arrow-container vuelta";
+                arrow.className = "moving-arrow anim-vuelta";
+                progressBar.style.right = "0"; progressBar.style.left = "auto";
+            }
+			
+	
+
+            ESTACIONES.forEach((est, idx) => {
+                const node = document.createElement('div');
+                node.className = `station-node ${idx === nextIndex ? 'next' : ''}`;
+                node.id = `node-${idx}`;
+                let mapCombosHTML = '';
+                if (est.comb && est.comb.length > 0) {
+                    const badges = est.comb.map(c => {
+                        const color = (typeof COLORS_TRENES_COMB !== 'undefined' && COLORS_TRENES_COMB[c]) ? COLORS_TRENES_COMB[c] : '#555';
+                        const txtColor = textoSobre(color);
+                        return `<div class="map-combo-badge" style="background-color:${color};color:${txtColor}">${getCombContent(c, true)}</div>`;
+                    }).join('');
+                    mapCombosHTML = `<div class="map-combos">${badges}</div>`;
+                }
+                const bajadaClass = est.bajada ? `bajada-${est.bajada}` : 'bajada-normal';
+                node.innerHTML = `<div class="dot ${bajadaClass}"></div><div class="station-name">${formatStationName(est.nombre)}</div>${mapCombosHTML}`;
+                track.appendChild(node);
+            });
+            
+            viewMap.classList.add('active');
+            aplicarClima(CICLO_CLIMAS[climaActual]);
+            actualizarReloj();
+        }
+
+        function actualizarReloj() {
+            const ahora = new Date();
+            uiClock.innerText = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            uiFecha.innerText = ahora.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+        setInterval(actualizarReloj, 1000);
+
+        const sensor = {
+            temp: { val: 22.5, base: 22.5, min: 19.0, max: 26.5, vel: 0 },
+            hum:  { val: 52.0, base: 52.0, min: 40.0, max: 68.0, vel: 0 },
+            iaq:  { val: 72,   base: 72,   min: 30,   max: 150,  vel: 0 },
+        };
+
+        setInterval(() => {
+            sensor.temp.base = Math.min(sensor.temp.max, Math.max(sensor.temp.min, sensor.temp.base + (Math.random() - 0.48) * 0.4));
+            sensor.hum.base  = Math.min(sensor.hum.max,  Math.max(sensor.hum.min, sensor.hum.base  + (Math.random() - 0.48) * 0.8));
+            sensor.iaq.base  = Math.min(sensor.iaq.max,  Math.max(sensor.iaq.min, sensor.iaq.base  + (Math.random() - 0.48) * 3));
+        }, 45000);
+
+        let sensorTick = 0;
+        function tickSensores() {
+            sensorTick++;
+            if (sensorTick % 90 === 0) {
+                ['temp', 'hum', 'iaq'].forEach(k => {
+                    const s = sensor[k];
+                    const ruido    = (Math.random() - 0.5) * (k === 'temp' ? 0.06 : k === 'hum' ? 0.14 : 0.8);
+                    const atraccion = (s.base - s.val) * 0.008;
+                    s.vel = s.vel * 0.75 + atraccion + ruido;
+                    s.val = Math.min(s.max, Math.max(s.min, s.val + s.vel));
+                });
+                const tEl = document.getElementById('int-temp-value');
+                const hEl = document.getElementById('int-hum-value');
+                const iEl = document.getElementById('int-iaq-value');
+                if (tEl) tEl.innerText = sensor.temp.val.toFixed(1) + '°C';
+                if (hEl) hEl.innerText = Math.round(sensor.hum.val) + '%';
+                if (iEl) iEl.innerText = Math.round(sensor.iaq.val);
+            }
+            requestAnimationFrame(tickSensores);
+        }
+        tickSensores();
+
+        function setUIState(moving) {
+            if (moving) {
+                sidebar.classList.remove('oculta');
+                viewArrival.classList.remove('active');
+                viewMap.classList.add('active');
+                uiNextName.innerText = ESTACIONES[nextIndex].nombre;
+                
+                document.querySelectorAll('.station-node').forEach((node, idx) => {
+                    node.className = 'station-node';
+                    const dot = node.querySelector('.dot');
+                    const bajada = Array.from(dot.classList).find(c => c.startsWith('bajada-')) || '';
+                    dot.className = 'dot' + (bajada ? ' ' + bajada : '');
+
+                    const isPassed = esIda ? (idx < nextIndex) : (idx > nextIndex);
+                    const isFuture = esIda ? (idx > nextIndex) : (idx < nextIndex);
+                    
+                    if (idx === nextIndex) {
+                        node.classList.add('next');
+                        dot.classList.add('next');
+                    } else if (isPassed) {
+                        dot.classList.add('passed');
+                    } else if (isFuture) {
+                        dot.classList.add('future');
+                    }
+                });
+            } else {
+                viewMap.classList.remove('active');
+                viewArrival.classList.add('active');
+
+                const est = ESTACIONES[nextIndex];
+                const tieneCombos = est.comb && est.comb.length > 0;
+
+                const badgeEl = document.getElementById('arr-badge');
+                badgeEl.innerText = TREN_SIGLAS[LINEA_A_MOSTRAR] || LINEA_A_MOSTRAR.substring(0,2);
+                badgeEl.style.color = textoSobre(DATOS_LINEA.color);
+
+                // --- DESCENSO POR MANO ---
+                const bajadaD = est.bajada || 'normal';
+                const svgIzq = `<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`;
+                const svgDer = `<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
+                let descHTML = '';
+                const ambas = bajadaD === 'centroizqder' || bajadaD === 'izqder';
+                if (ambas) {
+                    descHTML = `
+                        <div class="arr-descenso-label">Descenso</div>
+                        <div class="arr-descenso-ambos">
+                            <div class="arr-descenso-flecha">${svgIzq}</div>
+                            <div style="text-align:center">
+                                <div class="arr-descenso-texto">Ambas manos</div>
+                                <div class="arr-descenso-sub">Izquierda y derecha</div>
+                            </div>
+                            <div class="arr-descenso-flecha">${svgDer}</div>
+                        </div>`;
+                } else {
+                    const porDerecha = (bajadaD === 'centro');
+                    descHTML = `
+                        <div class="arr-descenso-label">Descenso por mano</div>
+                        <div class="arr-descenso-dir">
+                            <div class="arr-descenso-flecha">${porDerecha ? svgDer : svgIzq}</div>
+                            <div>
+                                <div class="arr-descenso-texto">${porDerecha ? 'Derecha' : 'Izquierda'}</div>
+                                <div class="arr-descenso-sub">${porDerecha ? 'Right side' : 'Left side'}</div>
+                            </div>
+                        </div>`;
+                }
+                document.getElementById('arr-descenso').innerHTML = descHTML;
+
+                const nombreEl = document.getElementById('arrival-name');
+                nombreEl.innerHTML = formatStationName(est.nombre);
+                nombreEl.className = 'arr-nombre';
+                if (est.nombre.length > 22) nombreEl.classList.add('muy-largo');
+                else if (est.nombre.length > 14) nombreEl.classList.add('largo');
+
+                const salidaIzq = (nextIndex % 2 === 0);
+
+                function flechaH(izq) {
+                    return izq
+                        ? `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:42px;height:42px;flex-shrink:0;stroke:var(--color-linea-activa)"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`
+                        : `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:42px;height:42px;flex-shrink:0;stroke:var(--color-linea-activa)"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
+                }
+
+                const SVG = {
+                    escalera: `<svg viewBox="0 0 24 24"><path d="M4 21h2v-4h4v-4h4v-4h4V5h2v6h-4v4h-4v4H8v4H4v-2z" fill="white"/></svg>`,
+                    ascensor: `<svg viewBox="0 0 24 24"><path d="M7 2h10c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm5 2.5L9 8h6l-3-3.5zM12 19l3-3.5H9l3 3.5zm-1-6h2v2h-2v-2zm0-3.5h2v2h-2v-2z" fill="white"/></svg>`,
+                };
+
+                let salidasArr = est.salidas ? est.salidas : ["Salida Principal"];
+                const salidasHTML = salidasArr.map((s, i) => {
+                    const izqEsta = (salidaIzq && i % 2 === 0) || (!salidaIzq && i % 2 !== 0);
+                    return `<div class="arr-card-row" style="margin-bottom:8px">
+                        ${izqEsta ? flechaH(true) : ''}
+                        <div class="pic-icon gris">${SVG.escalera}</div>
+                        <div style="flex:1">
+                            <div class="arr-card-texto">${s}</div>
+                        </div>
+                        ${!izqEsta ? flechaH(false) : ''}
+                    </div>`;
+                }).join('');
+                document.getElementById('arr-card-escalera').innerHTML =
+                    `<div class="arr-card-titulo">Salidas — Escalera</div>${salidasHTML}`;
+
+                const ascensorIzq = !salidaIzq;
+                const calleAscensor = salidasArr[0] || 'Av. Principal';
+                document.getElementById('arr-card-ascensor').innerHTML = `
+                    <div class="arr-card-titulo">Ascensor</div>
+                    <div class="arr-card-row">
+                        ${ascensorIzq ? flechaH(true) : ''}
+                        <div class="pic-icon">${SVG.ascensor}</div>
+                        <div style="flex:1">
+                            <div class="arr-card-texto">${calleAscensor}</div>
+                            <div class="arr-card-subtexto">Plataforma → Calle · Acceso PMR</div>
+                        </div>
+                        ${!ascensorIzq ? flechaH(false) : ''}
+                    </div>`;
+
+                if (tieneCombos) {
+                    const combosHTML = est.comb.map(c => {
+                        const color = (typeof COLORS_TRENES_COMB !== 'undefined' && COLORS_TRENES_COMB[c]) ? COLORS_TRENES_COMB[c] : '#555';
+                        const isSubte = c.startsWith('subte_');
+                        const isBus = c.toLowerCase().includes('omnibus') || c.toLowerCase().includes('bus');
+                        
+                        let label = c;
+                        let subtexto = "Ferrocarril";
+
+                        if(isSubte) {
+                            label = "Línea " + c.split("_")[1];
+                            subtexto = "Subte";
+                        } else if(isBus) {
+                            label = "Ómnibus";
+                            subtexto = "Colectivos";
+                        } else {
+                            label = c.replace(/_/g, " ");
+                            if(!label.toLowerCase().includes('tren') && label !== 'Premetro') {
+                                label = "Tren " + label;
+                            }
+                        }
+
+                        return `<div class="arr-card-row" style="margin-bottom:10px">
+                            <div class="arr-comb-badge" style="background:${color};color:${textoSobre(color)}">${getCombContent(c, false)}</div>
+                            <div style="flex:1">
+                                <div class="arr-card-texto">${label}</div>
+                                <div class="arr-card-subtexto">${subtexto}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    document.getElementById('arr-card-combos').innerHTML =
+                        `<div class="arr-card-titulo">Combinaciones</div>${combosHTML}`;
+                } else {
+                    document.getElementById('arr-card-combos').innerHTML = `
+                        <div class="arr-card-titulo">Combinaciones</div>
+                        <div class="arr-sin-comb">Sin combinaciones<br>en esta estación</div>`;
+                }
+            }
+        }
+
+        function handleArrival() {
+            contadorEstaciones++;
+            if (contadorEstaciones % 3 === 0) {
+                climaActual = (climaActual + 1) % CICLO_CLIMAS.length;
+                limpiarClima();
+                setTimeout(() => aplicarClima(CICLO_CLIMAS[climaActual]), 1600);
+            }
+
+            setUIState(false);
+            setTimeout(() => {
+                if (esIda) {
+                    if (nextIndex < ESTACIONES.length - 1) {
+                        currentIndex = nextIndex; nextIndex++; isMoving = true; setUIState(true);
+                    } else {
+                        currentProgress = 0; currentIndex = 0; nextIndex = 1; isMoving = true; setUIState(true);
+                    }
+                } else {
+                    if (nextIndex > 0) {
+                        currentIndex = nextIndex; nextIndex--; isMoving = true; setUIState(true);
+                    } else {
+                        currentProgress = 1.0; currentIndex = ESTACIONES.length - 1; nextIndex = ESTACIONES.length - 2; isMoving = true; setUIState(true);
+                    }
+                }
+            }, 6000); 
+        }
+
+        function loop() {
+            if (isMoving) {
+                const targetProgress = nextIndex / (ESTACIONES.length - 1);
+                
+                if (esIda) {
+                    currentProgress += 0.0005; 
+                    if (currentProgress >= targetProgress) {
+                        currentProgress = targetProgress;
+                        isMoving = false;
+                        handleArrival();
+                    }
+                    progressBar.style.width = `${currentProgress * 100}%`;
+                } else {
+                    currentProgress -= 0.0005; 
+                    if (currentProgress <= targetProgress) {
+                        currentProgress = targetProgress;
+                        isMoving = false;
+                        handleArrival();
+                    }
+                    progressBar.style.width = `${(1.0 - currentProgress) * 100}%`;
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        initDisplay();
+        setUIState(true);
+        requestAnimationFrame(loop);
+    </script>
+
+    <!-- BOTONES DE LÍNEA -->
+    <div id="linea-btns" style="
+        position: absolute; bottom: -56px; left: 0; right: 0;
+        display: flex; gap: 10px; justify-content: center; align-items: center;
+        pointer-events: auto;
+    ">
+        <span style="font-size:13px;color:#999;font-family:sans-serif">Tren:</span>
+        <div id="linea-btns-inner" style="display:flex;gap:10px"></div>
+        <span style="font-size:13px;color:#999;font-family:sans-serif;margin-left:16px">Sentido:</span>
+        <button id="btn-sentido" onclick="toggleSentido()" style="
+            padding:6px 16px;border-radius:8px;border:1px solid #555;cursor:pointer;
+            background:#333;color:#eee;font-size:13px;font-family:sans-serif;
+        " id="btn-sentido">← →</button>
+    </div>
+
+    <script>
+    (function(){
+        const lineas = [
+            {id:'MITRE', color:'#0072BB', label: 'Mi'}, 
+            {id:'SARMIENTO', color:'#00A3E0', label: 'Sa'},
+            {id:'ROCA', color:'#0055A5', label: 'Ro'}, 
+            {id:'SAN_MARTIN', color:'#0293CF', label: 'SM'},
+            {id:'BELGRANO_N', color:'#c8102e', label: 'BN'}, 
+            {id:'URQUIZA', color:'#FF7D36', label: 'Ur'},
+        ];
+        const params = new URLSearchParams(location.search);
+        const actual = params.get('linea') || 'MITRE';
+        const sentido = params.get('sentido') || 'VUELTA';
+        document.getElementById('btn-sentido').textContent = sentido === 'IDA' ? '→ IDA' : '← VUELTA';
+        const cont = document.getElementById('linea-btns-inner');
+        lineas.forEach(l => {
+            const btn = document.createElement('button');
+            btn.textContent = l.label;
+            btn.dataset.linea = l.id;
+            const activo = l.id === actual;
+            btn.style.cssText = `
+                width:40px;height:40px;border-radius:8px;border:none;cursor:pointer;
+                background:${l.color};color:white;font-size:16px;font-weight:900;
+                font-family:sans-serif;opacity:${activo?'1':'0.5'};
+                transform:${activo?'scale(1.15)':'scale(1)'};
+                transition:opacity 0.2s,transform 0.2s;
+            `;
+            btn.onclick = () => {
+                const u = new URL(location.href);
+                u.searchParams.set('linea', l.id);
+                u.searchParams.set('sentido', sentido);
+                location.href = u.toString();
+            };
+            cont.appendChild(btn);
+        });
+    })();
+
+    function toggleSentido() {
+        const u = new URL(location.href);
+        const s = u.searchParams.get('sentido') || 'VUELTA';
+        u.searchParams.set('sentido', s === 'IDA' ? 'VUELTA' : 'IDA');
+        location.href = u.toString();
+    }
+    </script>
+</body>
+</html>
